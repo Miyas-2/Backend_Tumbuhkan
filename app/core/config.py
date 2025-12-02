@@ -2,18 +2,18 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    # Database
-    MYSQL_HOST: str
-    MYSQL_PORT: int = 3306
-    MYSQL_USER: str
-    MYSQL_PASSWORD: str
-    MYSQL_DATABASE: str
+    # Database - PostgreSQL
+    DB_HOST: str
+    DB_PORT: int = 5432
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_NAME: str
     
     # MQTT
     MQTT_BROKER: str
     MQTT_PORT: int
     MQTT_TOPIC_SENSOR: str
-    MQTT_TOPIC_ACTUATOR: str
+    MQTT_TOPIC_ACTUATOR_STATUS: str
     MQTT_SAVE_INTERVAL: int
     
     # AI Services
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     
     @property
     def DATABASE_URL(self) -> str:
-        return f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     class Config:
         env_file = ".env"
