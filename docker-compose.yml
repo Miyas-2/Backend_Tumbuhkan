@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:9.2
+    container_name: tumbuhkan_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: tumbuhkan_db
+      MYSQL_USER: tumbuhkan_user
+      MYSQL_PASSWORD: tumbuhkan_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - tumbuhkan_network
+
+  mqtt:
+    image: eclipse-mosquitto:latest
+    container_name: tumbuhkan_mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - tumbuhkan_network
+
+  backend:
+    build: .
+    container_name: tumbuhkan_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MYSQL_HOST=mysql
+      - MQTT_BROKER=mqtt
+    depends_on:
+      - mysql
+      - mqtt
+    volumes:
+      - .:/app
+    networks:
+      - tumbuhkan_network
+
+volumes:
+  mysql_data:
+
+networks:
+  tumbuhkan_network:
+    driver: bridge
