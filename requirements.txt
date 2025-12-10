@@ -1,48 +1,35 @@
-# FastAPI
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
-pydantic-settings==2.1.0
+ZQuerySiswa.SQL.Clear;
+  ZQuerySiswa.SQL.Text := 'SELECT * FROM siswa'; // Mengambil ID dan Nama dari tabel siswa
+  ZQuerySiswa.Open;
 
-# Database - MySQL 9.2
-SQLAlchemy==2.0.25
-aiomysql==0.2.0
-PyMySQL==1.1.0
-cryptography==42.0.0
+  cbb_siswa.Items.Clear; // Bersihkan item yang sudah ada
 
-# MQTT
-paho-mqtt==1.6.1
-asyncio-mqtt==0.16.1
+  while not ZQuerySiswa.Eof do
+  begin
+    // Menambahkan Nama Siswa (kolom 'nama') sebagai teks yang ditampilkan
+    // Menyimpan ID Siswa (kolom 'id_siswa') sebagai objek tersembunyi
+    cbb_siswa.Items.AddObject(
+      ZQuerySiswa.FieldByName('nama').AsString,
+      TObject(ZQuerySiswa.FieldByName('id_siswa').AsInteger) // Asumsi ID Siswa bisa dikonversi ke Integer
+    );
+    ZQuerySiswa.Next;
+  end;
 
-# Machine Learning
-scikit-learn==1.4.0
-joblib==1.3.2
-numpy==1.26.3
-pandas==2.2.0
 
-# Computer Vision
-opencv-python==4.9.0.80
-Pillow==10.2.0
-torch==2.1.2
-torchvision==0.16.2
+  procedure TFObat.cbb_jns_obtEnter(Sender: TObject);
+begin
+  DM_poli.ZQjenisobat.SQL.Clear;
+  DM_poli.ZQjenisobat.SQL.Text := 'SELECT * FROM jenis_obat';
+  DM_poli.ZQjenisobat.Open;
 
-# AI & RAG
-google-generativeai==0.3.2
-sentence-transformers==2.3.1
-transformers==4.37.2
-chromadb==0.4.22
-langchain==0.1.4
-
-# Utilities
-python-multipart==0.0.6
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-dotenv==1.0.1
-aiofiles==23.2.1
-
-# Development
-pytest==8.0.0
-pytest-asyncio==0.23.4
-black==24.1.1
-flake8==7.0.0
-mypy==1.8.0
+  cbb_jns_obt.Items.Clear; // Clear existing items
+  while not DM_poli.ZQjenisobat.Eof do
+  begin
+    // Assuming there is a field 'nama_jenis_obat' in your jenis_obat table
+    cbb_jns_obt.Items.AddObject(
+      DM_poli.ZQjenisobat.FieldByName('nama').AsString, // Display name
+      TObject(DM_poli.ZQjenisobat.FieldByName('id_jenis_obat').AsInteger) // Store ID
+    );
+    DM_poli.ZQjenisobat.Next;
+  end;
+end;
