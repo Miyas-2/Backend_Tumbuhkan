@@ -16,6 +16,7 @@ class SensorData(BaseModel):
     flow: Optional[float] = None
     image_path: Optional[str] = None       # Path to raw image
     annotated_image_path: Optional[str] = None # Path to annotated image
+    growth_stage: Optional[str] = None     # Growth stage from ML model
 
 class SensorResponse(SensorData):
     """Schema untuk response sensor data"""

@@ -40,7 +40,11 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
     flow FLOAT,
     
     -- Growth stage from ML model
-    growth_stage VARCHAR(50)
+    growth_stage VARCHAR(50),
+    
+    -- Image paths
+    image_path VARCHAR(255),
+    annotated_image_path VARCHAR(255)
 );
 
 -- Create index for faster timestamp queries

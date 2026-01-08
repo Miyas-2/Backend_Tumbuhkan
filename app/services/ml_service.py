@@ -105,7 +105,7 @@ class GrowthDetectionService:
             traceback.print_exc()
             return None, 0.0, None
     
-    def predict_from_base64(self, base64_image: str) -> Tuple[Optional[str], float, Optional[str]]:
+    def predict_from_base64(self, base64_image: str) -> Tuple[Optional[str], float, Optional[Image.Image], Optional[Image.Image]]:
         """
         Predict growth stage from Base64 encoded image.
         
@@ -113,7 +113,7 @@ class GrowthDetectionService:
             base64_image: Base64 encoded image string
             
         Returns:
-            Tuple of (growth_stage, confidence, image_base64) or (None, 0.0, None) if error
+            Tuple of (growth_stage, confidence, raw_image, annotated_image)
         """
         try:
             # Remove data URL prefix if present
@@ -127,7 +127,7 @@ class GrowthDetectionService:
             
         except Exception as e:
             print(f"❌ Error decoding Base64 image: {e}")
-            return None, 0.0, None
+            return None, 0.0, None, None
     
     def is_model_loaded(self) -> bool:
         """Check if model is loaded"""
