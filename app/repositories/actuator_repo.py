@@ -1,14 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from app.models.database.actuator import ActuatorLog
-from app.models.schemas.actuator import ActuatorStatus
+from app.models.schemas.actuator import ActuatorLogCreate
 from typing import Optional, List
 
 class ActuatorRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
     
-    async def create(self, actuator_data: ActuatorStatus) -> ActuatorLog:
+    async def create(self, actuator_data: ActuatorLogCreate) -> ActuatorLog:
         """Create new actuator log"""
         db_actuator = ActuatorLog(**actuator_data.model_dump())
         self.db.add(db_actuator)

@@ -8,19 +8,29 @@ class SensorReading(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
     
-    # water quality sensors
+    # pH sensor
     ph = Column(Float, nullable=True)
-    tds = Column(Integer, nullable=True)
-    water_flow = Column(Float, nullable=True)
+    ph_voltage = Column(Float, nullable=True)
     
-    # Air sensors
-    air_humidity = Column(Float, nullable=True)
-    air_temperature = Column(Float, nullable=True)
+    # TDS sensor
+    tds = Column(Float, nullable=True)
+    tds_voltage = Column(Float, nullable=True)
     
-    ldr_value = Column(Integer, nullable=True)
-    water_temperature = Column(Float, nullable=True)
-    water_level = Column(Float, nullable=True)
+    # Temperature sensors
+    temp_air = Column(Float, nullable=True)      # DS18B20 - water temperature
+    temp_udara = Column(Float, nullable=True)    # DHT22 - air temperature
     
-def __repr__(self):
+    # Humidity (DHT22)
+    humidity = Column(Float, nullable=True)
+    
+    # LDR sensor
+    ldr = Column(Integer, nullable=True)
+    
+    # Ultrasonic distance sensor
+    distance = Column(Float, nullable=True)
+    
+    # Flow sensor
+    flow = Column(Float, nullable=True)
+    
+    def __repr__(self):
         return f"<SensorReading(id={self.id}, timestamp={self.timestamp})>"
-    

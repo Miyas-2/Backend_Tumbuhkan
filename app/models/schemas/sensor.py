@@ -3,15 +3,17 @@ from datetime import datetime
 from typing import Optional
 
 class SensorData(BaseModel):
-    """Schema untuk data sensor dari MQTT"""
+    """Schema untuk data sensor dari MQTT (sesuai format ESP32)"""
     ph: Optional[float] = None
+    ph_voltage: Optional[float] = None
     tds: Optional[float] = None
-    water_flow: Optional[float] = None
-    air_temperature: Optional[float] = None
-    air_humidity: Optional[float] = None
-    ldr_value: Optional[int] = None
-    water_temperature: Optional[float] = None
-    water_level: Optional[float] = None
+    tds_voltage: Optional[float] = None
+    temp_air: Optional[float] = None       # DS18B20 - water temperature
+    temp_udara: Optional[float] = None     # DHT22 - air temperature
+    humidity: Optional[float] = None
+    ldr: Optional[int] = None
+    distance: Optional[float] = None
+    flow: Optional[float] = None
 
 class SensorResponse(SensorData):
     """Schema untuk response sensor data"""

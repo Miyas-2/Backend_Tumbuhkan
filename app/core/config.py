@@ -12,9 +12,14 @@ class Settings(BaseSettings):
     # MQTT
     MQTT_BROKER: str
     MQTT_PORT: int
-    MQTT_TOPIC_SENSOR: str
-    MQTT_TOPIC_ACTUATOR_STATUS: str
     MQTT_SAVE_INTERVAL: int
+    
+    # MQTT Topics (sesuai ESP32)
+    MQTT_TOPIC_SENSOR: str = "tumbuhkan/sensor/data"
+    MQTT_TOPIC_RELAY_CONTROL: str = "tumbuhkan/relay/control"
+    MQTT_TOPIC_RELAY_STATUS: str = "tumbuhkan/relay/status"
+    MQTT_TOPIC_PH_CALIBRATION: str = "tumbuhkan/ph/calibration"
+    MQTT_TOPIC_TDS_CALIBRATION: str = "tumbuhkan/tds/calibration"
     
     # AI Services
     GEMINI_API_KEY: str

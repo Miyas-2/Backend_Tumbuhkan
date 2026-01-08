@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, DateTime, Boolean
+from sqlalchemy import Column, BigInteger, DateTime, Boolean, Integer, String
 from datetime import datetime
 from app.core.database import Base
 
@@ -8,15 +8,22 @@ class ActuatorLog(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
     
-    # Pumps
-    pump_nutrisi_A = Column(Boolean, nullable=False, default=False)
-    pump_nutrisi_B = Column(Boolean, nullable=False, default=False)
-    pump_Ph_Up = Column(Boolean, nullable=False, default=False)
-    pump_Ph_Down = Column(Boolean, nullable=False, default=False)
+    # LED & FAN (ON/OFF only)
+    led = Column(String(10), nullable=True, default="OFF")
+    fan = Column(String(10), nullable=True, default="OFF")
     
-    # Other actuators
-    fan = Column(Boolean, nullable=False, default=False)
-    led = Column(Boolean, nullable=False, default=False)
+    # Relay pumps with duration (in ms)
+    ph_up = Column(Boolean, nullable=False, default=False)
+    ph_up_duration = Column(Integer, nullable=True, default=0)
+    
+    ab_mix = Column(Boolean, nullable=False, default=False)
+    ab_mix_duration = Column(Integer, nullable=True, default=0)
+    
+    ph_down = Column(Boolean, nullable=False, default=False)
+    ph_down_duration = Column(Integer, nullable=True, default=0)
+    
+    pump = Column(Boolean, nullable=False, default=False)
+    pump_duration = Column(Integer, nullable=True, default=0)
     
     def __repr__(self):
         return f"<ActuatorLog(id={self.id}, timestamp={self.timestamp})>"

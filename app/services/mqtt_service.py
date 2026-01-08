@@ -8,11 +8,18 @@ from app.core.database import AsyncSessionLocal
 from app.repositories.sensor_repo import SensorRepository
 from app.repositories.actuator_repo import ActuatorRepository
 from app.models.schemas.sensor import SensorData
-from app.models.schemas.actuator import ActuatorStatus
+from app.models.schemas.actuator import ActuatorStatus, RelayControlRequest, ActuatorLogCreate
 
 settings = get_settings()
 
 class MQTTService:
+    # Topics sesuai ESP32
+    TOPIC_SENSOR = "tumbuhkan/sensor/data"
+    TOPIC_RELAY_CONTROL = "tumbuhkan/relay/control"
+    TOPIC_RELAY_STATUS = "tumbuhkan/relay/status"
+    TOPIC_PH_CALIBRATION = "tumbuhkan/ph/calibration"
+    TOPIC_TDS_CALIBRATION = "tumbuhkan/tds/calibration"
+    
     def __init__(self):
         self.client = mqtt_client.Client()
         self.client.on_connect = self.on_connect
@@ -40,10 +47,11 @@ class MQTTService:
         if rc == 0:
             print(f"✅ Connected to MQTT Broker: {settings.MQTT_BROKER}")
             self.connected = True
-            client.subscribe(settings.MQTT_TOPIC_SENSOR)
-            client.subscribe(settings.MQTT_TOPIC_ACTUATOR_STATUS)
-            print(f"📡 Subscribed to: {settings.MQTT_TOPIC_SENSOR}")
-            print(f"📡 Subscribed to: {settings.MQTT_TOPIC_ACTUATOR_STATUS}")
+            # Subscribe to sensor data and relay status
+            client.subscribe(self.TOPIC_SENSOR)
+            client.subscribe(self.TOPIC_RELAY_STATUS)
+            print(f"📡 Subscribed to: {self.TOPIC_SENSOR}")
+            print(f"📡 Subscribed to: {self.TOPIC_RELAY_STATUS}")
         else:
             print(f"❌ Failed to connect, return code {rc}")
     
@@ -53,14 +61,15 @@ class MQTTService:
             payload = json.loads(msg.payload.decode())
             topic = msg.topic
             
-            # Store latest data (overwrite previous)
-            if topic == settings.MQTT_TOPIC_SENSOR:
+            # Store latest sensor data
+            if topic == self.TOPIC_SENSOR:
                 self.latest_sensor = SensorData(**payload)
                 print(f"📥 Sensor data updated: pH={payload.get('ph')}, TDS={payload.get('tds')}")
             
-            elif topic == settings.MQTT_TOPIC_ACTUATOR_STATUS:
+            # Store latest actuator status
+            elif topic == self.TOPIC_RELAY_STATUS:
                 self.latest_actuator = ActuatorStatus(**payload)
-                print(f"📥 Actuator data updated: LED={payload.get('led')}, Fan={payload.get('fan')}")
+                print(f"📥 Relay status updated: LED={payload.get('LED')}, FAN={payload.get('FAN')}")
                 
         except Exception as e:
             print(f"❌ Error processing message: {e}")
@@ -109,9 +118,20 @@ class MQTTService:
             
             async with AsyncSessionLocal() as db:
                 repo = ActuatorRepository(db)
-                await repo.create(self.latest_actuator)
                 
-                print(f"💾 Actuator data saved: LED={self.latest_actuator.led}, Fan={self.latest_actuator.fan}")
+                # Convert ActuatorStatus to ActuatorLogCreate
+                log_data = ActuatorLogCreate(
+                    led=self.latest_actuator.LED,
+                    fan=self.latest_actuator.FAN,
+                    ph_up=self.latest_actuator.PH_UP == "ON",
+                    ab_mix=self.latest_actuator.AB_MIX == "ON",
+                    ph_down=self.latest_actuator.PH_DOWN == "ON",
+                    pump=self.latest_actuator.PUMP == "ON"
+                )
+                
+                await repo.create(log_data)
+                
+                print(f"💾 Actuator data saved: LED={self.latest_actuator.LED}, FAN={self.latest_actuator.FAN}")
                 
                 # Clear after save
                 self.latest_actuator = None
@@ -127,16 +147,111 @@ class MQTTService:
         except Exception as e:
             print(f"❌ Error connecting to MQTT: {e}")
     
-    def publish_actuator_control(self, actuator_data: ActuatorStatus):
-        """Publish actuator control to MQTT"""
+    def publish_relay_control(self, relay_control: RelayControlRequest) -> bool:
+        """Publish relay control command to ESP32
+        
+        Format yang dikirim ke topic tumbuhkan/relay/control:
+        {
+            "LED": {"state": "ON"},
+            "FAN": {"state": "OFF"},
+            "PH_UP": {"duration": 5000},
+            "AB_MIX": {"duration": 3000}
+        }
+        """
         try:
-            payload = json.dumps(actuator_data.model_dump())
-            self.client.publish(settings.MQTT_TOPIC_ACTUATOR_STATUS, payload)
-            print(f"📤 Published actuator control: {payload}")
-            return True
+            # Build payload hanya untuk relay yang diset
+            payload = {}
+            
+            if relay_control.LED:
+                payload["LED"] = {"state": relay_control.LED.state}
+            
+            if relay_control.FAN:
+                payload["FAN"] = {"state": relay_control.FAN.state}
+            
+            if relay_control.PH_UP:
+                payload["PH_UP"] = {"duration": relay_control.PH_UP.duration}
+            
+            if relay_control.AB_MIX:
+                payload["AB_MIX"] = {"duration": relay_control.AB_MIX.duration}
+            
+            if relay_control.PH_DOWN:
+                payload["PH_DOWN"] = {"duration": relay_control.PH_DOWN.duration}
+            
+            if relay_control.PUMP:
+                payload["PUMP"] = {"duration": relay_control.PUMP.duration}
+            
+            if not payload:
+                print("⚠️ No relay control data to publish")
+                return False
+            
+            json_payload = json.dumps(payload)
+            result = self.client.publish(self.TOPIC_RELAY_CONTROL, json_payload)
+            
+            if result.rc == 0:
+                print(f"📤 Published relay control: {json_payload}")
+                return True
+            else:
+                print(f"❌ Failed to publish relay control, rc={result.rc}")
+                return False
+                
         except Exception as e:
-            print(f"❌ Error publishing actuator control: {e}")
+            print(f"❌ Error publishing relay control: {e}")
             return False
+    
+    def publish_ph_calibration(self, v4: float = None, v7: float = None, v9: float = None) -> bool:
+        """Publish pH calibration data"""
+        try:
+            payload = {}
+            if v4 is not None:
+                payload["v4"] = v4
+            if v7 is not None:
+                payload["v7"] = v7
+            if v9 is not None:
+                payload["v9"] = v9
+            
+            if not payload:
+                return False
+            
+            json_payload = json.dumps(payload)
+            result = self.client.publish(self.TOPIC_PH_CALIBRATION, json_payload)
+            print(f"📤 Published pH calibration: {json_payload}")
+            return result.rc == 0
+            
+        except Exception as e:
+            print(f"❌ Error publishing pH calibration: {e}")
+            return False
+    
+    def publish_tds_calibration(self, m: float = None, c: float = None, ppm: int = None) -> bool:
+        """Publish TDS calibration data (fast or legacy mode)"""
+        try:
+            payload = {}
+            
+            # Fast calibration mode
+            if m is not None and c is not None:
+                payload["m"] = m
+                payload["c"] = c
+            # Legacy 2-point calibration
+            elif ppm is not None:
+                payload["ppm"] = ppm
+            else:
+                return False
+            
+            json_payload = json.dumps(payload)
+            result = self.client.publish(self.TOPIC_TDS_CALIBRATION, json_payload)
+            print(f"📤 Published TDS calibration: {json_payload}")
+            return result.rc == 0
+            
+        except Exception as e:
+            print(f"❌ Error publishing TDS calibration: {e}")
+            return False
+    
+    def get_latest_sensor(self) -> Optional[SensorData]:
+        """Get latest sensor data (from memory, not database)"""
+        return self.latest_sensor
+    
+    def get_latest_actuator_status(self) -> Optional[ActuatorStatus]:
+        """Get latest actuator status (from memory, not database)"""
+        return self.latest_actuator
     
     def disconnect(self):
         """Disconnect from MQTT broker"""

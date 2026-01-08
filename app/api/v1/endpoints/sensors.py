@@ -2,15 +2,38 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.repositories.sensor_repo import SensorRepository
-from app.models.schemas.sensor import SensorResponse
+from app.models.schemas.sensor import SensorResponse, SensorData
+from app.services.mqtt_service import mqtt_service
 from datetime import datetime
 from typing import List, Optional
 
 router = APIRouter()
 
+@router.get("/live")
+async def get_live_sensor():
+    """Get real-time sensor data from MQTT memory (not database)
+    
+    Data ini langsung dari ESP32 via MQTT, belum disimpan ke database.
+    Untuk data yang sudah tersimpan, gunakan /latest atau /history.
+    """
+    sensor = mqtt_service.get_latest_sensor()
+    
+    if not sensor:
+        return {
+            "status": "no_data",
+            "message": "No sensor data received yet from ESP32",
+            "data": None
+        }
+    
+    return {
+        "status": "success",
+        "message": "Live sensor data from MQTT",
+        "data": sensor.model_dump()
+    }
+
 @router.get("/latest", response_model=SensorResponse)
 async def get_latest_sensor(db: AsyncSession = Depends(get_db)):
-    """Get latest sensor reading"""
+    """Get latest sensor reading from database"""
     repo = SensorRepository(db)
     sensor = await repo.get_latest()
     
