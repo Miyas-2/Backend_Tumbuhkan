@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.repositories.sensor_repo import SensorRepository
@@ -32,7 +32,7 @@ async def get_live_sensor():
     }
 
 @router.get("/latest", response_model=SensorResponse)
-async def get_latest_sensor(db: AsyncSession = Depends(get_db)):
+async def get_latest_sensor(request: Request, db: AsyncSession = Depends(get_db)):
     """Get latest sensor reading from database"""
     repo = SensorRepository(db)
     sensor = await repo.get_latest()
@@ -40,10 +40,16 @@ async def get_latest_sensor(db: AsyncSession = Depends(get_db)):
     if not sensor:
         raise HTTPException(status_code=404, detail="No sensor data found")
     
+    # Construct full URL for image if exists
+    if sensor.annotated_image_path:
+        base_url = str(request.base_url).rstrip("/")
+        sensor.image_url = f"{base_url}/{sensor.annotated_image_path}"
+    
     return sensor
 
 @router.get("/history", response_model=List[SensorResponse])
 async def get_sensor_history(
+    request: Request,
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
     limit: int = Query(100, le=1000),
@@ -53,6 +59,13 @@ async def get_sensor_history(
     """Get sensor readings history with optional date filters"""
     repo = SensorRepository(db)
     sensors = await repo.get_history(start_date, end_date, limit, offset)
+    
+    # Construct full URL for images
+    base_url = str(request.base_url).rstrip("/")
+    for sensor in sensors:
+        if sensor.annotated_image_path:
+            sensor.image_url = f"{base_url}/{sensor.annotated_image_path}"
+            
     return sensors
 
 @router.get("/{sensor_id}", response_model=SensorResponse)

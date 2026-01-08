@@ -14,11 +14,14 @@ class SensorData(BaseModel):
     ldr: Optional[int] = None
     distance: Optional[float] = None
     flow: Optional[float] = None
+    image_path: Optional[str] = None       # Path to raw image
+    annotated_image_path: Optional[str] = None # Path to annotated image
 
 class SensorResponse(SensorData):
     """Schema untuk response sensor data"""
     id: int
     timestamp: datetime
+    image_url: Optional[str] = None        # Full URL to annotated image
     
     class Config:
         from_attributes = True

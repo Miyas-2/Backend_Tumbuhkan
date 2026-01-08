@@ -1,0 +1,83 @@
+# ML Model API Integration - Walkthrough
+
+## Summary
+Integrated 2 ML models for plant monitoring in the Tumbuhkan backend:
+- **Growth Detection (YOLO v8n)** - ESP32-CAM → API → Save to DB
+- **Disease Detection (SSD+MobileNetV2)** - Flutter app → API → Response only
+
+---
+
+## Changes Made
+
+### Database Schema
+**[sensor.py](file:///d:/Semester%205/iot/tumbuhkan_backend/app/models/database/sensor.py)** - Added `growth_stage` column
+
+```diff
++from sqlalchemy import Column, ..., String
++growth_stage = Column(String(50), nullable=True)
+```
+
+### Configuration
+**[config.py](file:///d:/Semester%205/iot/tumbuhkan_backend/app/core/config.py)** - Added interval setting
+
+```diff
++GROWTH_CAPTURE_INTERVAL_HOURS: int = 6
+```
+
+### ML Services
+| File | Model | Purpose |
+|------|-------|---------|
+| [ml_service.py](file:///d:/Semester%205/iot/tumbuhkan_backend/app/services/ml_service.py) | YOLO v8n | Growth stage detection (4 classes) |
+| [cv_service.py](file:///d:/Semester%205/iot/tumbuhkan_backend/app/services/cv_service.py) | SSD+MobileNetV2 | Disease detection (7 classes) |
+
+### API Endpoints
+**[prediction.py](file:///d:/Semester%205/iot/tumbuhkan_backend/app/api/v1/endpoints/prediction.py)**
+
+| Endpoint | Method | Input | Output | DB Save |
+|----------|--------|-------|--------|---------|
+| `/api/v1/prediction/growth/detect` | POST | File upload | Growth stage + confidence | ✅ Yes |
+| `/api/v1/prediction/growth/detect/base64` | POST | Base64 JSON | Growth stage + confidence | ✅ Yes |
+| `/api/v1/prediction/disease/detect` | POST | File upload | Disease + recommendations | ❌ No |
+| `/api/v1/prediction/status` | GET | - | Model status | - |
+
+---
+
+## Growth Stage Classes
+1. Stage 01: Early Growth
+2. Stage 02: Leafy Growth
+3. Stage 03: Head Formation
+4. Stage 04: Harvest Stage
+
+## Disease Classes
+- Bacterial
+- Downy mildew on lettuce
+- Powdery mildew on lettuce
+- Septoria Blight on lettuce
+- Viral
+- Wilt and leaf blight on lettuce
+- Healthy
+
+---
+
+## Verification Results
+- ✅ YOLO v8n model loads successfully
+- ✅ All API endpoints registered
+- ✅ Dependencies installed (ultralytics, torch, torchvision, pillow, opencv-python)
+
+## ESP32-CAM Usage Example
+```cpp
+// POST image to growth detection endpoint
+HTTPClient http;
+http.begin("http://YOUR_SERVER/api/v1/prediction/growth/detect");
+http.addHeader("Content-Type", "multipart/form-data");
+// Send camera frame as file upload
+```
+
+## Flutter Usage Example
+```dart
+// POST image to disease detection
+final response = await http.MultipartRequest(
+  'POST', 
+  Uri.parse('$baseUrl/api/v1/prediction/disease/detect')
+)..files.add(await http.MultipartFile.fromPath('file', imagePath));
+```

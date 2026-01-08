@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, DateTime, Float, Integer
+from sqlalchemy import Column, BigInteger, DateTime, Float, Integer, String
 from datetime import datetime
 from app.core.database import Base
 
@@ -31,6 +31,13 @@ class SensorReading(Base):
     
     # Flow sensor
     flow = Column(Float, nullable=True)
+    
+    # Growth stage from ML model (YOLO v8n)
+    growth_stage = Column(String(50), nullable=True)
+    
+    # Image paths
+    image_path = Column(String(255), nullable=True)
+    annotated_image_path = Column(String(255), nullable=True)
     
     def __repr__(self):
         return f"<SensorReading(id={self.id}, timestamp={self.timestamp})>"

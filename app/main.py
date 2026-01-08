@@ -37,6 +37,14 @@ app = FastAPI(
 # Include API router
 app.include_router(api_router, prefix=settings.API_PREFIX)
 
+# Mount static files
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Create static directory if not exists
+os.makedirs("app/static", exist_ok=True)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 @app.get("/")
 async def root():
     return {

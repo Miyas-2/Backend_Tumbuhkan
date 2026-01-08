@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     MQTT_TOPIC_PH_CALIBRATION: str = "tumbuhkan/ph/calibration"
     MQTT_TOPIC_TDS_CALIBRATION: str = "tumbuhkan/tds/calibration"
     
+    # Growth Detection Settings
+    GROWTH_CAPTURE_INTERVAL_HOURS: int = 6  # How often to save growth stage
+    
     # AI Services
     GEMINI_API_KEY: str
     HF_MODEL_NAME: str

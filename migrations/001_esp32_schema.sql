@@ -37,7 +37,10 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
     distance FLOAT,
     
     -- Flow sensor
-    flow FLOAT
+    flow FLOAT,
+    
+    -- Growth stage from ML model
+    growth_stage VARCHAR(50)
 );
 
 -- Create index for faster timestamp queries

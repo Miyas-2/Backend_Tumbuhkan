@@ -1,35 +1,30 @@
-ZQuerySiswa.SQL.Clear;
-  ZQuerySiswa.SQL.Text := 'SELECT * FROM siswa'; // Mengambil ID dan Nama dari tabel siswa
-  ZQuerySiswa.Open;
+# FastAPI and Web
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-multipart>=0.0.6
 
-  cbb_siswa.Items.Clear; // Bersihkan item yang sudah ada
+# Database
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+alembic>=1.13.0
 
-  while not ZQuerySiswa.Eof do
-  begin
-    // Menambahkan Nama Siswa (kolom 'nama') sebagai teks yang ditampilkan
-    // Menyimpan ID Siswa (kolom 'id_siswa') sebagai objek tersembunyi
-    cbb_siswa.Items.AddObject(
-      ZQuerySiswa.FieldByName('nama').AsString,
-      TObject(ZQuerySiswa.FieldByName('id_siswa').AsInteger) // Asumsi ID Siswa bisa dikonversi ke Integer
-    );
-    ZQuerySiswa.Next;
-  end;
+# MQTT
+paho-mqtt>=1.6.0
 
+# AI/ML Dependencies
+ultralytics>=8.0.0
+onnxruntime>=1.16.0
+torch>=2.0.0
+torchvision>=0.15.0
+opencv-python>=4.8.0
+pillow>=10.0.0
+numpy>=1.24.0
 
-  procedure TFObat.cbb_jns_obtEnter(Sender: TObject);
-begin
-  DM_poli.ZQjenisobat.SQL.Clear;
-  DM_poli.ZQjenisobat.SQL.Text := 'SELECT * FROM jenis_obat';
-  DM_poli.ZQjenisobat.Open;
+# Google AI
+google-generativeai>=0.3.0
 
-  cbb_jns_obt.Items.Clear; // Clear existing items
-  while not DM_poli.ZQjenisobat.Eof do
-  begin
-    // Assuming there is a field 'nama_jenis_obat' in your jenis_obat table
-    cbb_jns_obt.Items.AddObject(
-      DM_poli.ZQjenisobat.FieldByName('nama').AsString, // Display name
-      TObject(DM_poli.ZQjenisobat.FieldByName('id_jenis_obat').AsInteger) // Store ID
-    );
-    DM_poli.ZQjenisobat.Next;
-  end;
-end;
+# Utilities
+python-dotenv>=1.0.0
+httpx>=0.25.0
