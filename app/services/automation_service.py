@@ -6,6 +6,7 @@ from app.services.mqtt_service import mqtt_service
 from app.models.schemas.sensor import SensorData
 from app.models.schemas.actuator import RelayControlRequest, PumpControl, LedFanControl, LedFanControl, ActuatorLogCreate
 from app.repositories.actuator_repo import ActuatorRepository
+from app.repositories.sensor_repo import SensorRepository
 from app.core.database import AsyncSessionLocal
 from app.core.config import get_settings
 
@@ -19,7 +20,19 @@ class AutomationService:
 
     # --- CONFIGURATION (Bisa dipindah ke env/db nantinya) ---
     TARGET_PH = 6.0
-    TARGET_TDS = 800.0  # PPM
+    
+    # Default Target TDS if growth unknown
+    DEFAULT_TARGET_TDS = 800.0  
+    TARGET_TDS = DEFAULT_TARGET_TDS # This will be updated dynamically
+    
+    # Dynamic Growth Targets Config
+    # Format: "Class String": {"tds": value, "ph": value}
+    CONFIG_GROWTH_TARGETS = {
+        "Stage 01: Early Growth": {"tds": 600.0, "ph": 6.0},
+        "Stage 02: Leafy Growth": {"tds": 800.0, "ph": 6.0},
+        "Stage 03: Head Formation": {"tds": 1000.0, "ph": 6.0},
+        "Stage 04: Harvest Stage": {"tds": 1100.0, "ph": 6.0}
+    }
     
     PH_TOLERANCE = 0.2
     TDS_TOLERANCE = 50.0 # PPM
@@ -78,7 +91,10 @@ class AutomationService:
                 sensor_data = mqtt_service.get_latest_sensor()
                 
                 if sensor_data:
-                    # 2. Run Logic
+                    # 2. Update Dynamic Targets based on Growth Stage
+                    await self._update_targets_from_growth()
+                    
+                    # 3. Run Logic
                     await self._control_environment(sensor_data)
                     await self._control_ph(sensor_data)
                     await self._control_nutrients(sensor_data)
@@ -232,6 +248,39 @@ class AutomationService:
         
         # Log to DB (Async but fire and forget style for now, or await)
         # Idealnya panggil repo simpan log "System Dosing"
+
+    async def _update_targets_from_growth(self):
+        """Fetch latest growth stage and update targets"""
+        try:
+            async with AsyncSessionLocal() as db:
+                repo = SensorRepository(db)
+                growth_data = await repo.get_latest_growth()
+                
+                # growth_data is a Row or dict. If column is JSONB and we fetched scalar, 
+                # it should be the json dict directly or inside the row.
+                # Repo returns scalar_one_or_none(), so if select(SensorReading.growth_stage),
+                # it returns the JSONB object (dict)
+                
+                if growth_data and isinstance(growth_data, dict):
+                    growth_class = growth_data.get("growth_class")
+                    
+                    if growth_class in self.CONFIG_GROWTH_TARGETS:
+                        config = self.CONFIG_GROWTH_TARGETS[growth_class]
+                        
+                        # Update Targets
+                        if config.get("tds") is not None:
+                            # Only log if changed
+                            if self.TARGET_TDS != config["tds"]:
+                                print(f"🌱 Growth Stage detected: {growth_class}. Updating Target TDS to {config['tds']}")
+                            self.TARGET_TDS = float(config["tds"])
+                            
+                        if config.get("ph") is not None:
+                            if self.TARGET_PH != config["ph"]:
+                                print(f"🌱 Growth Stage detected: {growth_class}. Updating Target pH to {config['ph']}")
+                            self.TARGET_PH = float(config["ph"])
+                            
+        except Exception as e:
+            print(f"⚠️ Error updating growth targets: {e}")
         
 # Global Instance
 automation_service = AutomationService()
