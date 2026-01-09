@@ -95,7 +95,10 @@ async def detect_growth_from_file(
             # Save to DB
             repo = SensorRepository(db)
             sensor_data = SensorData(
-                growth_stage=growth_stage,
+                growth_stage={
+                    "growth_class": growth_stage,
+                    "confidence": confidence
+                },
                 image_path=f"static/images/growth/raw/{raw_filename}",
                 annotated_image_path=f"static/images/growth/annotated/{annotated_filename}"
             )
@@ -161,7 +164,10 @@ async def detect_growth_from_base64(
             
             repo = SensorRepository(db)
             sensor_data = SensorData(
-                growth_stage=growth_stage,
+                growth_stage={
+                    "growth_class": growth_stage,
+                    "confidence": confidence
+                },
                  image_path=f"static/images/growth/raw/{raw_filename}",
                 annotated_image_path=f"static/images/growth/annotated/{annotated_filename}"
             )

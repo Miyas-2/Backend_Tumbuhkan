@@ -32,8 +32,10 @@ class SensorReading(Base):
     # Flow sensor
     flow = Column(Float, nullable=True)
     
-    # Growth stage from ML model (YOLO v8n)
-    growth_stage = Column(String(50), nullable=True)
+    from sqlalchemy.dialects.postgresql import JSONB
+    
+    # Growth stage from ML model (YOLO v8n) - Stores {growth_class, confidence}
+    growth_stage = Column(JSONB, nullable=True)
     
     # Image paths
     image_path = Column(String(255), nullable=True)

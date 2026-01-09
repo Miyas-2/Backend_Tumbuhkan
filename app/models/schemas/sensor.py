@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any, Union
 
 class SensorData(BaseModel):
     """Schema untuk data sensor dari MQTT (sesuai format ESP32)"""
@@ -16,7 +16,7 @@ class SensorData(BaseModel):
     flow: Optional[float] = None
     image_path: Optional[str] = None       # Path to raw image
     annotated_image_path: Optional[str] = None # Path to annotated image
-    growth_stage: Optional[str] = None     # Growth stage from ML model
+    growth_stage: Optional[Union[Dict[str, Any], str]] = None     # Growth stage from ML model
 
 class SensorResponse(SensorData):
     """Schema untuk response sensor data"""

@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
     flow FLOAT,
     
     -- Growth stage from ML model
-    growth_stage VARCHAR(50),
+    growth_stage JSONB,
     
     -- Image paths
     image_path VARCHAR(255),
