@@ -5,7 +5,8 @@ from app.repositories.actuator_repo import ActuatorRepository
 from app.models.schemas.actuator import (
     ActuatorResponse, 
     RelayControlRequest, 
-    RelayControl,
+    LedFanControl,
+    PumpControl,
     ActuatorLogCreate,
     ActuatorStatus
 )
@@ -101,7 +102,7 @@ async def control_led(
         raise HTTPException(status_code=400, detail="State must be 'ON' or 'OFF'")
     
     relay_control = RelayControlRequest(
-        LED=RelayControl(state=state.upper())
+        LED=LedFanControl(state=state.upper())
     )
     
     success = mqtt_service.publish_relay_control(relay_control)
@@ -121,7 +122,7 @@ async def control_fan(
         raise HTTPException(status_code=400, detail="State must be 'ON' or 'OFF'")
     
     relay_control = RelayControlRequest(
-        FAN=RelayControl(state=state.upper())
+        FAN=LedFanControl(state=state.upper())
     )
     
     success = mqtt_service.publish_relay_control(relay_control)
@@ -159,7 +160,7 @@ async def control_pump(
         )
     
     # Build relay control request dynamically
-    relay_control_data = {pump_name: RelayControl(duration=duration)}
+    relay_control_data = {pump_name: PumpControl(duration=duration)}
     relay_control = RelayControlRequest(**relay_control_data)
     
     success = mqtt_service.publish_relay_control(relay_control)

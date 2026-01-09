@@ -168,6 +168,9 @@ class MQTTService:
             if relay_control.FAN:
                 payload["FAN"] = {"state": relay_control.FAN.state}
             
+            if relay_control.PUMP:
+                payload["PUMP"] = {"duration": relay_control.PUMP.duration}
+
             if relay_control.PH_UP:
                 payload["PH_UP"] = {"duration": relay_control.PH_UP.duration}
             
@@ -176,9 +179,6 @@ class MQTTService:
             
             if relay_control.PH_DOWN:
                 payload["PH_DOWN"] = {"duration": relay_control.PH_DOWN.duration}
-            
-            if relay_control.PUMP:
-                payload["PUMP"] = {"duration": relay_control.PUMP.duration}
             
             if not payload:
                 print("⚠️ No relay control data to publish")

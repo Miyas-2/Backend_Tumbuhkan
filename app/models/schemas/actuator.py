@@ -2,30 +2,20 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, Literal
 
-class RelayControl(BaseModel):
-    """Schema untuk kontrol single relay dengan duration"""
-    state: Literal["ON", "OFF"] = "OFF"
-    duration: Optional[int] = Field(default=0, description="Duration in milliseconds (0 = toggle only)")
+class LedFanControl(BaseModel):
+    state: Literal["ON", "OFF"]
+
+class PumpControl(BaseModel):
+    duration: int = 0
 
 class RelayControlRequest(BaseModel):
-    """Schema untuk request kontrol relay ke ESP32
-    
-    Format yang dikirim ke MQTT:
-    {
-        "LED": {"state": "ON"},
-        "FAN": {"state": "OFF"},
-        "PH_UP": {"duration": 5000},
-        "AB_MIX": {"duration": 3000},
-        "PH_DOWN": {"duration": 2000},
-        "PUMP": {"duration": 10000}
-    }
-    """
-    LED: Optional[RelayControl] = None
-    FAN: Optional[RelayControl] = None
-    PH_UP: Optional[RelayControl] = None
-    AB_MIX: Optional[RelayControl] = None
-    PH_DOWN: Optional[RelayControl] = None
-    PUMP: Optional[RelayControl] = None
+    """Schema untuk request kontrol relay ke ESP32"""
+    LED: Optional[LedFanControl] = None
+    FAN: Optional[LedFanControl] = None
+    PUMP: Optional[PumpControl] = None
+    PH_UP: Optional[PumpControl] = None
+    PH_DOWN: Optional[PumpControl] = None
+    AB_MIX: Optional[PumpControl] = None
 
 class ActuatorStatus(BaseModel):
     """Schema untuk status actuator dari MQTT (response dari ESP32)"""

@@ -5,6 +5,7 @@ from app.core.config import get_settings
 from app.core.database import create_tables
 from app.api.v1.router import api_router
 from app.services.mqtt_service import mqtt_service
+from app.services.automation_service import automation_service
 
 settings = get_settings()
 
@@ -22,10 +23,14 @@ async def lifespan(app: FastAPI):
     print("📡 Connecting to MQTT broker...")
     mqtt_service.connect()
     
+    # Start Automation Service
+    automation_service.start()
+    
     yield
     
     # Shutdown
     print("👋 Shutting down...")
+    await automation_service.stop()
     mqtt_service.disconnect()
 
 app = FastAPI(
