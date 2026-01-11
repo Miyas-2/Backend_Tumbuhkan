@@ -42,3 +42,33 @@ async def create_tables():
 async def drop_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+async def init_growth_configs():
+    """Seed initial growth configuration data if table is empty"""
+    from app.models.database.plant import GrowthStageConfig
+    from sqlalchemy import select
+
+    initial_configs = [
+        {"stage_name": "Stage 01: Early Growth", "tds_target": 600.0, "ph_target": 6.0, "tds_tolerance": 50.0, "ph_tolerance": 0.2},
+        {"stage_name": "Stage 02: Leafy Growth", "tds_target": 800.0, "ph_target": 6.0, "tds_tolerance": 50.0, "ph_tolerance": 0.2},
+        {"stage_name": "Stage 03: Head Formation", "tds_target": 1000.0, "ph_target": 6.0, "tds_tolerance": 50.0, "ph_tolerance": 0.2},
+        {"stage_name": "Stage 04: Harvest Stage", "tds_target": 1100.0, "ph_target": 6.0, "tds_tolerance": 50.0, "ph_tolerance": 0.2}
+    ]
+
+    async with AsyncSessionLocal() as session:
+        try:
+            for config_data in initial_configs:
+                stmt = select(GrowthStageConfig).where(GrowthStageConfig.stage_name == config_data["stage_name"])
+                result = await session.execute(stmt)
+                existing = result.scalar_one_or_none()
+                
+                if not existing:
+                    print(f"🌱 Seeding config for: {config_data['stage_name']}")
+                    new_config = GrowthStageConfig(**config_data)
+                    session.add(new_config)
+            
+            await session.commit()
+            print("✅ Growth configs initialized")
+        except Exception as e:
+            print(f"❌ Error seeding growth configs: {e}")
+            await session.rollback()

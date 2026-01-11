@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import asyncio
 from app.core.config import get_settings
-from app.core.database import create_tables
+from app.core.database import create_tables, init_growth_configs
 from app.api.v1.router import api_router
 from app.services.mqtt_service import mqtt_service
 from app.services.automation_service import automation_service
@@ -14,6 +14,7 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Creating database tables...")
     await create_tables()
+    await init_growth_configs()
     print("✅ Database tables created!")
     
     # Set event loop untuk MQTT service
@@ -24,7 +25,7 @@ async def lifespan(app: FastAPI):
     mqtt_service.connect()
     
     # Start Automation Service
-    # automation_service.start()
+    automation_service.start()
     
     yield
     

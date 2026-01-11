@@ -9,6 +9,8 @@ from app.repositories.actuator_repo import ActuatorRepository
 from app.repositories.actuator_repo import ActuatorRepository
 from app.repositories.sensor_repo import SensorRepository
 from app.repositories.growth_repo import GrowthRepository
+from app.models.database.plant import GrowthStageConfig
+from sqlalchemy import select
 from app.core.database import AsyncSessionLocal
 from app.core.config import get_settings
 
@@ -20,26 +22,18 @@ class AutomationService:
     Mengimplementasikan algoritma dosing iteratif (Calibration -> Calculate -> Dose -> Wait).
     """
 
-    # --- CONFIGURATION (Bisa dipindah ke env/db nantinya) ---
+    # --- CONFIGURATION FROM DB ---
+    # Default Target if config not found
+    DEFAULT_TARGET_TDS = 800.0  
+    TARGET_TEXT = "Default"
+    
+    TARGET_TDS = DEFAULT_TARGET_TDS 
     TARGET_PH = 6.0
     
-    # Default Target TDS if growth unknown
-    DEFAULT_TARGET_TDS = 800.0  
-    TARGET_TDS = DEFAULT_TARGET_TDS # This will be updated dynamically
-    
-    # Dynamic Growth Targets Config
-    # Format: "Class String": {"tds": value, "ph": value}
-    CONFIG_GROWTH_TARGETS = {
-        "Stage 01: Early Growth": {"tds": 600.0, "ph": 6.0},
-        "Stage 02: Leafy Growth": {"tds": 800.0, "ph": 6.0},
-        "Stage 03: Head Formation": {"tds": 1000.0, "ph": 6.0},
-        "Stage 04: Harvest Stage": {"tds": 1100.0, "ph": 6.0}
-    }
-    
     PH_TOLERANCE = 0.2
-    TDS_TOLERANCE = 50.0 # PPM
+    TDS_TOLERANCE = 50.0 
     
-    LDR_THRESHOLD_DARK = 500 # Contoh nilai
+    LDR_THRESHOLD_DARK = 500
     TEMP_THRESHOLD_HIGH = 30.0
     
     # Pump Config
@@ -271,20 +265,30 @@ class AutomationService:
                     if isinstance(growth_stage_dict, dict):
                         growth_class = growth_stage_dict.get("growth_class")
                         
-                        if growth_class in self.CONFIG_GROWTH_TARGETS:
-                            config = self.CONFIG_GROWTH_TARGETS[growth_class]
+                        if growth_class:
+                            # 3. Fetch Config from DB based on String Match
+                            result = await db.execute(
+                                select(GrowthStageConfig).where(GrowthStageConfig.stage_name == growth_class)
+                            )
+                            config = result.scalar_one_or_none()
                             
-                            # Update Targets
-                            if config.get("tds") is not None:
-                                # Only log if changed
-                                if self.TARGET_TDS != config["tds"]:
-                                    print(f"🌱 Growth Stage detected: {growth_class}. Updating Target TDS to {config['tds']}")
-                                self.TARGET_TDS = float(config["tds"])
+                            if config:
+                                # Update Targets
+                                if self.TARGET_TDS != config.tds_target:
+                                    print(f"🌱 Growth Stage detected: {growth_class}. Updating Target TDS to {config.tds_target}")
+                                self.TARGET_TDS = float(config.tds_target)
+                                self.TDS_TOLERANCE = float(config.tds_tolerance)
                                 
-                            if config.get("ph") is not None:
-                                if self.TARGET_PH != config["ph"]:
-                                    print(f"🌱 Growth Stage detected: {growth_class}. Updating Target pH to {config['ph']}")
-                                self.TARGET_PH = float(config["ph"])
+                                if self.TARGET_PH != config.ph_target:
+                                    print(f"🌱 Growth Stage detected: {growth_class}. Updating Target pH to {config.ph_target}")
+                                self.TARGET_PH = float(config.ph_target)
+                                self.PH_TOLERANCE = float(config.ph_tolerance)
+                                
+                                # Update Env Thresholds
+                                self.TEMP_THRESHOLD_HIGH = float(config.temp_threshold_high)
+                                self.LDR_THRESHOLD_DARK = int(config.ldr_threshold_dark)
+                            else:
+                                print(f"⚠️ Config not found for stage: {growth_class}")
                             
         except Exception as e:
             print(f"⚠️ Error updating growth targets: {e}")
