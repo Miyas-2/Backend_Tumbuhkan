@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     mqtt_service.connect()
     
     # Start Automation Service
-    automation_service.start()
+    # automation_service.start()
     
     yield
     

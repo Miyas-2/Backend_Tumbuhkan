@@ -32,14 +32,5 @@ class SensorReading(Base):
     # Flow sensor
     flow = Column(Float, nullable=True)
     
-    from sqlalchemy.dialects.postgresql import JSONB
-    
-    # Growth stage from ML model (YOLO v8n) - Stores {growth_class, confidence}
-    growth_stage = Column(JSONB, nullable=True)
-    
-    # Image paths
-    image_path = Column(String(255), nullable=True)
-    annotated_image_path = Column(String(255), nullable=True)
-    
     def __repr__(self):
         return f"<SensorReading(id={self.id}, timestamp={self.timestamp})>"

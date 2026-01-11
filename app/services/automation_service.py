@@ -6,7 +6,9 @@ from app.services.mqtt_service import mqtt_service
 from app.models.schemas.sensor import SensorData
 from app.models.schemas.actuator import RelayControlRequest, PumpControl, LedFanControl, LedFanControl, ActuatorLogCreate
 from app.repositories.actuator_repo import ActuatorRepository
+from app.repositories.actuator_repo import ActuatorRepository
 from app.repositories.sensor_repo import SensorRepository
+from app.repositories.growth_repo import GrowthRepository
 from app.core.database import AsyncSessionLocal
 from app.core.config import get_settings
 
@@ -253,31 +255,36 @@ class AutomationService:
         """Fetch latest growth stage and update targets"""
         try:
             async with AsyncSessionLocal() as db:
-                repo = SensorRepository(db)
-                growth_data = await repo.get_latest_growth()
+                repo = GrowthRepository(db)
+                growth_data = await repo.get_latest()
                 
-                # growth_data is a Row or dict. If column is JSONB and we fetched scalar, 
-                # it should be the json dict directly or inside the row.
-                # Repo returns scalar_one_or_none(), so if select(SensorReading.growth_stage),
-                # it returns the JSONB object (dict)
-                
-                if growth_data and isinstance(growth_data, dict):
-                    growth_class = growth_data.get("growth_class")
-                    
-                    if growth_class in self.CONFIG_GROWTH_TARGETS:
-                        config = self.CONFIG_GROWTH_TARGETS[growth_class]
-                        
-                        # Update Targets
-                        if config.get("tds") is not None:
-                            # Only log if changed
-                            if self.TARGET_TDS != config["tds"]:
-                                print(f"🌱 Growth Stage detected: {growth_class}. Updating Target TDS to {config['tds']}")
-                            self.TARGET_TDS = float(config["tds"])
+                if growth_data and growth_data.growth_stage:
+                    # growth_stage is JSONB dict or str
+                    growth_stage_dict = growth_data.growth_stage
+                    if isinstance(growth_stage_dict, str):
+                        import json
+                        try:
+                            growth_stage_dict = json.loads(growth_stage_dict)
+                        except:
+                            pass
                             
-                        if config.get("ph") is not None:
-                            if self.TARGET_PH != config["ph"]:
-                                print(f"🌱 Growth Stage detected: {growth_class}. Updating Target pH to {config['ph']}")
-                            self.TARGET_PH = float(config["ph"])
+                    if isinstance(growth_stage_dict, dict):
+                        growth_class = growth_stage_dict.get("growth_class")
+                        
+                        if growth_class in self.CONFIG_GROWTH_TARGETS:
+                            config = self.CONFIG_GROWTH_TARGETS[growth_class]
+                            
+                            # Update Targets
+                            if config.get("tds") is not None:
+                                # Only log if changed
+                                if self.TARGET_TDS != config["tds"]:
+                                    print(f"🌱 Growth Stage detected: {growth_class}. Updating Target TDS to {config['tds']}")
+                                self.TARGET_TDS = float(config["tds"])
+                                
+                            if config.get("ph") is not None:
+                                if self.TARGET_PH != config["ph"]:
+                                    print(f"🌱 Growth Stage detected: {growth_class}. Updating Target pH to {config['ph']}")
+                                self.TARGET_PH = float(config["ph"])
                             
         except Exception as e:
             print(f"⚠️ Error updating growth targets: {e}")

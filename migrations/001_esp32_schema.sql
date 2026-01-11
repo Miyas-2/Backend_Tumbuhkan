@@ -37,7 +37,21 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
     distance FLOAT,
     
     -- Flow sensor
-    flow FLOAT,
+    flow FLOAT
+);
+
+-- Create index for faster timestamp queries
+CREATE INDEX IF NOT EXISTS idx_sensor_readings_timestamp 
+ON sensor_readings(timestamp DESC);
+
+-- ============================================================
+-- GROWTH LOGS TABLE
+-- ============================================================
+
+-- Create new growth_logs table
+CREATE TABLE IF NOT EXISTS growth_logs (
+    id BIGSERIAL PRIMARY KEY,
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Growth stage from ML model
     growth_stage JSONB,
@@ -48,8 +62,9 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
 );
 
 -- Create index for faster timestamp queries
-CREATE INDEX IF NOT EXISTS idx_sensor_readings_timestamp 
-ON sensor_readings(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_growth_logs_timestamp 
+ON growth_logs(timestamp DESC);
+
 
 -- ============================================================
 -- ACTUATOR LOGS TABLE
@@ -67,44 +82,13 @@ CREATE TABLE IF NOT EXISTS actuator_logs (
     led VARCHAR(10) DEFAULT 'OFF',
     fan VARCHAR(10) DEFAULT 'OFF',
     
-    -- Relay pumps with duration
+    -- Relay pumps (ON/OFF) - Matches ESP32 'status' payload
     ph_up BOOLEAN NOT NULL DEFAULT FALSE,
-    ph_up_duration INTEGER DEFAULT 0,
-    
     ab_mix BOOLEAN NOT NULL DEFAULT FALSE,
-    ab_mix_duration INTEGER DEFAULT 0,
-    
     ph_down BOOLEAN NOT NULL DEFAULT FALSE,
-    ph_down_duration INTEGER DEFAULT 0,
-    
-    pump BOOLEAN NOT NULL DEFAULT FALSE,
-    pump_duration INTEGER DEFAULT 0
+    pump BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create index for faster timestamp queries
 CREATE INDEX IF NOT EXISTS idx_actuator_logs_timestamp 
 ON actuator_logs(timestamp DESC);
-
--- ============================================================
--- OPTIONAL: Migration from old structure
--- If you have existing data and want to migrate
--- ============================================================
-
--- Rename columns for sensor_readings (if migrating)
--- ALTER TABLE sensor_readings RENAME COLUMN water_flow TO flow;
--- ALTER TABLE sensor_readings RENAME COLUMN air_humidity TO humidity;
--- ALTER TABLE sensor_readings RENAME COLUMN air_temperature TO temp_udara;
--- ALTER TABLE sensor_readings RENAME COLUMN water_temperature TO temp_air;
--- ALTER TABLE sensor_readings RENAME COLUMN water_level TO distance;
--- ALTER TABLE sensor_readings RENAME COLUMN ldr_value TO ldr;
--- ALTER TABLE sensor_readings ADD COLUMN IF NOT EXISTS ph_voltage FLOAT;
--- ALTER TABLE sensor_readings ADD COLUMN IF NOT EXISTS tds_voltage FLOAT;
-
--- Rename columns for actuator_logs (if migrating)
--- ALTER TABLE actuator_logs DROP COLUMN IF EXISTS pump_nutrisi_A;
--- ALTER TABLE actuator_logs DROP COLUMN IF EXISTS pump_nutrisi_B;
--- ALTER TABLE actuator_logs DROP COLUMN IF EXISTS pump_Ph_Up;
--- ALTER TABLE actuator_logs DROP COLUMN IF EXISTS pump_Ph_Down;
--- ALTER TABLE actuator_logs ADD COLUMN IF NOT EXISTS led VARCHAR(10) DEFAULT 'OFF';
--- ALTER TABLE actuator_logs ADD COLUMN IF NOT EXISTS fan VARCHAR(10) DEFAULT 'OFF';
--- ... etc

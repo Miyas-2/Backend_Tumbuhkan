@@ -49,13 +49,3 @@ class SensorRepository:
         query = query.limit(limit).offset(offset)
         result = await self.db.execute(query)
         return result.scalars().all()
-
-    async def get_latest_growth(self) -> Optional[dict]:
-        """Get latest growth stage info (where growth_stage is not null)"""
-        result = await self.db.execute(
-            select(SensorReading.growth_stage)
-            .where(SensorReading.growth_stage.is_not(None))
-            .order_by(desc(SensorReading.timestamp))
-            .limit(1)
-        )
-        return result.scalar_one_or_none()

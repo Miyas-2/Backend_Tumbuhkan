@@ -11,14 +11,14 @@ from datetime import datetime
 from app.core.database import get_db
 from app.services.ml_service import growth_detection_service
 from app.services.cv_service import disease_detection_service
-from app.repositories.sensor_repo import SensorRepository
+from app.repositories.growth_repo import GrowthRepository
+from app.models.schemas.growth import GrowthData
 from app.models.schemas.prediction import (
     GrowthDetectionRequest,
     GrowthDetectionResponse,
     DiseaseDetectionResponse,
     ModelStatusResponse
 )
-from app.models.schemas.sensor import SensorData
 
 router = APIRouter()
 
@@ -43,7 +43,7 @@ async def detect_growth_from_file(
     
     - Accepts image file upload
     - Processes with YOLO v8n model
-    - Optionally saves result to database (sensor_readings.growth_stage)
+    - Optionally saves result to database (growth_logs)
     
     Growth stages:
     - Stage 01: Early Growth
@@ -93,8 +93,8 @@ async def detect_growth_from_file(
                  annotated_image.save(annotated_path, format="JPEG")
             
             # Save to DB
-            repo = SensorRepository(db)
-            sensor_data = SensorData(
+            repo = GrowthRepository(db)
+            growth_data = GrowthData(
                 growth_stage={
                     "growth_class": growth_stage,
                     "confidence": confidence
@@ -102,7 +102,7 @@ async def detect_growth_from_file(
                 image_path=f"static/images/growth/raw/{raw_filename}",
                 annotated_image_path=f"static/images/growth/annotated/{annotated_filename}"
             )
-            await repo.create(sensor_data)
+            await repo.create(growth_data)
             print(f"💾 Growth stage and images saved: {timestamp}")
             
         except Exception as e:
@@ -162,16 +162,16 @@ async def detect_growth_from_base64(
             if annotated_image:
                  annotated_image.save(annotated_path, format="JPEG")
             
-            repo = SensorRepository(db)
-            sensor_data = SensorData(
+            repo = GrowthRepository(db)
+            growth_data = GrowthData(
                 growth_stage={
                     "growth_class": growth_stage,
                     "confidence": confidence
                 },
-                 image_path=f"static/images/growth/raw/{raw_filename}",
+                image_path=f"static/images/growth/raw/{raw_filename}",
                 annotated_image_path=f"static/images/growth/annotated/{annotated_filename}"
             )
-            await repo.create(sensor_data)
+            await repo.create(growth_data)
         except Exception as e:
             print(f"❌ Error saving to DB: {e}")
     
