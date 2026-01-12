@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.repositories.sensor_repo import SensorRepository
-from app.models.schemas.sensor import SensorResponse, SensorData
+from app.models.schemas.sensor import SensorResponse, SensorData, SensorSummary
 from app.services.mqtt_service import mqtt_service
 from datetime import datetime
 from typing import List, Optional
@@ -67,6 +67,20 @@ async def get_sensor_history(
             sensor.image_url = f"{base_url}/{sensor.annotated_image_path}"
             
     return sensors
+
+@router.get("/summary", response_model=List[SensorSummary])
+async def get_sensor_summary(
+    period: str = Query("day", regex="^(day|week|month)$"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get aggregated sensor data (average) for charts.
+    
+    - **period**: 'day' (hourly), 'week' (daily), 'month' (daily)
+    """
+    repo = SensorRepository(db)
+    summary = await repo.get_aggregated_history(period)
+    return summary
 
 @router.get("/{sensor_id}", response_model=SensorResponse)
 async def get_sensor_by_id(sensor_id: int, db: AsyncSession = Depends(get_db)):

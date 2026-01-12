@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import asyncio
+import socket
 from app.core.config import get_settings
 from app.core.database import create_tables
 from app.api.v1.router import api_router
@@ -9,9 +10,30 @@ from app.services.automation_service import automation_service
 
 settings = get_settings()
 
+def get_local_ip():
+    """Get local IP address of this machine"""
+    try:
+        # Create a socket to determine the local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    local_ip = get_local_ip()
+    print("\n" + "=" * 60)
+    print("🌱 TUMBUHKAN BACKEND SERVER")
+    print("=" * 60)
+    print(f"📍 Local IP Address: {local_ip}")
+    print(f"🌐 Server URL: http://{local_ip}:8000")
+    print(f"📚 API Docs: http://{local_ip}:8000/docs")
+    print("=" * 60 + "\n")
+    
     print("🚀 Creating database tables...")
     await create_tables()
     print("✅ Database tables created!")
@@ -24,7 +46,7 @@ async def lifespan(app: FastAPI):
     mqtt_service.connect()
     
     # Start Automation Service
-    automation_service.start()
+    # automation_service.start()
     
     yield
     
@@ -50,12 +72,19 @@ import os
 os.makedirs("app/static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+from fastapi.responses import FileResponse
+
+@app.get("/dashboard")
+async def dashboard():
+    return FileResponse("app/static/dashboard.html")
+
 @app.get("/")
 async def root():
     return {
         "message": "Tumbuhkan Backend API",
         "version": settings.APP_VERSION,
         "docs": "/docs",
+        "dashboard": "/dashboard",
         "mqtt_connected": mqtt_service.connected
     }
 

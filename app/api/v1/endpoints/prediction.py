@@ -51,28 +51,46 @@ async def detect_growth_from_file(
     - Stage 03: Head Formation
     - Stage 04: Harvest Stage
     """
+    print("\n" + "=" * 50)
+    print("GROWTH DETECTION REQUEST RECEIVED")
+    print(f"Filename: {file.filename}")
+    print(f"Content-Type: {file.content_type}")
+    print(f"Save to DB: {save_to_db}")
+    print("=" * 50)
+    
     # Check model is loaded
     if not growth_detection_service.is_model_loaded():
+        print("Model not loaded!")
         raise HTTPException(
             status_code=503,
             detail="Growth detection model not loaded"
         )
     
+    print("Model is loaded, reading file...")
+    
     # Read file bytes
     try:
         image_bytes = await file.read()
+        print(f"File size: {len(image_bytes)} bytes")
     except Exception as e:
+        print(f"Error reading file: {e}")
         raise HTTPException(
             status_code=400,
             detail=f"Error reading uploaded file: {str(e)}"
         )
     
     # Run prediction
+    print("Running prediction...")
     # Expects tuple: (growth_stage, confidence, raw_image_pil, annotated_image_pil)
     growth_stage, confidence, raw_image, annotated_image = growth_detection_service.predict_from_file(image_bytes)
     
     if growth_stage is None:
+        print("No growth stage detected!")
         return GrowthDetectionResponse(success=False)
+    
+    print(f"Prediction complete!")
+    print(f"   Growth Stage: {growth_stage}")
+    print(f"   Confidence: {confidence:.2%}")
     
     # Save to database and filesystem if requested
     if save_to_db and growth_stage:
@@ -103,12 +121,14 @@ async def detect_growth_from_file(
                 annotated_image_path=f"static/images/growth/annotated/{annotated_filename}"
             )
             await repo.create(sensor_data)
-            print(f"💾 Growth stage and images saved: {timestamp}")
+            print(f"Growth stage and images saved: {timestamp}")
             
         except Exception as e:
-            print(f"❌ Error saving to DB/File: {e}")
+            print(f"Error saving to DB/File: {e}")
             import traceback
             traceback.print_exc()
+    
+    print("=" * 50 + "\n")
     
     # Return simple success (no image payload)
     return GrowthDetectionResponse(
@@ -203,23 +223,40 @@ async def detect_disease(
     - Wilt_and_leaf_blight_on_lettuce
     - healthy
     """
+    print("\n" + "=" * 50)
+    print("🔬 DISEASE DETECTION REQUEST RECEIVED")
+    print(f"📁 Filename: {file.filename}")
+    print(f"📦 Content-Type: {file.content_type}")
+    print("=" * 50)
+    
     # Check model is loaded
     if not disease_detection_service.is_model_loaded():
+        print(" Model not loaded!")
         raise HTTPException(
             status_code=503,
             detail="Disease detection model not loaded"
         )
     
+    print("✅ Model is loaded, reading file...")
+    
     # Read file bytes
     try:
         image_bytes = await file.read()
+        print(f"File size: {len(image_bytes)} bytes")
     except Exception as e:
+        print(f" Error reading file: {e}")
         raise HTTPException(
             status_code=400,
             detail=f"Error reading uploaded file: {str(e)}"
         )
     
     # Run prediction
+    print(" Running prediction...")
     result = disease_detection_service.predict_from_file(image_bytes)
+    
+    print(f" Prediction complete!")
+    print(f"   Disease: {result.get('disease_class', 'N/A')}")
+    print(f"   Confidence: {result.get('confidence', 0):.2%}")
+    print("=" * 50 + "\n")
     
     return DiseaseDetectionResponse(**result)

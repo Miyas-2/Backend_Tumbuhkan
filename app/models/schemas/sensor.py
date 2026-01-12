@@ -33,3 +33,17 @@ class SensorHistoryQuery(BaseModel):
     end_date: Optional[datetime] = None
     limit: int = Field(default=100, le=1000)
     offset: int = Field(default=0, ge=0)
+
+class SensorSummary(BaseModel):
+    """Schema untuk data agregasi sensor (average)"""
+    timestamp: datetime
+    ph: float
+    ph_voltage: float
+    tds: float
+    tds_voltage: float
+    temp_air: float
+    temp_udara: float
+    humidity: float
+    ldr: int
+    distance: float
+    flow: float
