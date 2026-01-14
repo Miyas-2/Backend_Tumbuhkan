@@ -20,7 +20,7 @@ class GrowthStageConfig(Base):
     temp_threshold_high = Column(Float, default=30.0)
     ldr_threshold_dark = Column(Integer, default=500)
     
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     def __repr__(self):
         return f"<GrowthConfig(stage={self.stage_name}, tds={self.tds_target})>"

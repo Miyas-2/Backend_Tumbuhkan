@@ -12,6 +12,9 @@ class GrowthResponse(GrowthData):
     """Schema for growth data response"""
     id: int
     timestamp: datetime
+    # Full URLs for frontend (constructed in endpoint)
+    image_url: Optional[str] = None
+    annotated_image_url: Optional[str] = None
     
     class Config:
         from_attributes = True

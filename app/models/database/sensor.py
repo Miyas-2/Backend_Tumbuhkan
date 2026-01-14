@@ -6,7 +6,7 @@ class SensorReading(Base):
     __tablename__ = "sensor_readings"
     
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.now)
     
     # pH sensor
     ph = Column(Float, nullable=True)

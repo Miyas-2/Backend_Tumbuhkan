@@ -6,7 +6,7 @@ class ActuatorLog(Base):
     __tablename__ = "actuator_logs"
     
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.now)
     
     # LED & FAN (ON/OFF only)
     led = Column(String(10), nullable=True, default="OFF")
